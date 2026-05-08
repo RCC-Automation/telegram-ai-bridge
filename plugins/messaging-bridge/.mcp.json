@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "messaging-bridge": {
+      "command": "py",
+      "args": [
+        "-3",
+        "C:\\Users\\barru\\Documents\\New project\\telegram-ai-bridge\\plugins\\messaging-bridge\\mcp\\messaging_bridge_mcp.py"
+      ],
+      "env": {
+        "MESSAGING_BRIDGE_ROOT": "C:\\Users\\barru\\Documents\\New project\\telegram-ai-bridge"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "telegram-bridge",
+  "version": "0.1.0",
+  "description": "Codex management surface for the local Telegram bridge.",
+  "author": {
+    "name": "Local Workspace",
+    "email": "",
+    "url": ""
+  },
+  "homepage": "",
+  "repository": "",
+  "license": "UNLICENSED",
+  "keywords": [
+    "telegram",
+    "codex",
+    "bridge",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Telegram Bridge",
+    "shortDescription": "Manage the local Telegram-to-Codex bridge.",
+    "longDescription": "Provides Codex-facing tools and instructions for inspecting, routing, restarting, and debugging the local Telegram bridge without replacing the existing working scripts.",
+    "developerName": "Local Workspace",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Show Telegram bridge status.",
+      "List Codex threads available to Telegram.",
+      "Switch Telegram routing to AppStudio."
+    ],
+    "brandColor": "#229ED9"
+  }
+}

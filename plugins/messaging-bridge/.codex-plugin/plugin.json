@@ -1,0 +1,40 @@
+{
+  "name": "messaging-bridge",
+  "version": "0.1.0",
+  "description": "Embedded Codex messaging tools for Telegram and WhatsApp.",
+  "author": {
+    "name": "Local Workspace",
+    "email": "",
+    "url": ""
+  },
+  "homepage": "",
+  "repository": "",
+  "license": "UNLICENSED",
+  "keywords": [
+    "messaging",
+    "telegram",
+    "whatsapp",
+    "codex",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Messaging Bridge",
+    "shortDescription": "Use Telegram and WhatsApp from the active Codex chat.",
+    "longDescription": "Exposes Telegram and WhatsApp as MCP tools inside Codex. The plugin reuses the local Telegram notifier and WhatsApp bridge, but does not launch Codex or resume threads during normal tool use.",
+    "developerName": "Local Workspace",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Show messaging bridge status.",
+      "Read pending Telegram messages.",
+      "Search WhatsApp contacts."
+    ],
+    "brandColor": "#25D366"
+  }
+}

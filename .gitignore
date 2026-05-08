@@ -1,0 +1,38 @@
+.env
+state.json
+last_codex_reply.txt
+bridge.log
+*.log
+*.err
+*.out
+*.pid
+*_pid.txt
+tmp_*
+telegram_codex_gateway.log
+last_gateway_codex_reply.txt
+telegram_codex_gateway.lock
+telegram_notifier_token.txt
+telegram_notifier_inbox.json
+desktop_host.log
+desktop_host_autostart.out.log
+desktop_host_autostart.err.log
+.git.broken-pointer
+.git-blocked*/
+.agents/
+.codex-test-home/
+.codex_app_schema/
+.gateway-codex-home/
+.vendor_py/
+__pycache__/
+codex-app-schema/
+artifacts/
+desktop_agent_state.json
+_vendor/
+desktop engine/__pycache__/
+desktop engine/artifacts/
+desktop engine/desktop_agent_state.json
+desktop engine/desktop_host*.log
+desktop engine/_vendor/
+.venv/
+*.pyc
+.pytest_cache/
