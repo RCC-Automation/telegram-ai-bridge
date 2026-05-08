@@ -22,7 +22,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-DESKTOP_ENGINE_ROOT = ROOT / "desktop engine"
+DESKTOP_ENGINE_ROOT = ROOT.parent / "desktop engine"
 if str(DESKTOP_ENGINE_ROOT) not in sys.path:
     sys.path.insert(0, str(DESKTOP_ENGINE_ROOT))
 

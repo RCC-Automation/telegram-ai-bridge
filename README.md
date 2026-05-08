@@ -16,15 +16,15 @@ Common desktop actions are handled first by a reusable local desktop agent. For 
 The Telegram bridge itself uses Python standard-library modules. The desktop engine has its own dependency file:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py -m pip install -r requirements.txt
 ```
 
 ## Project Layout
 
 - `telegram_*.py`, `run_telegram_*.ps1`, `plugins/telegram-bridge`, and `plugins/messaging-bridge` belong to the Telegram bridge.
-- `desktop engine/` contains the desktop automation engine: agent, host app, broker, MCP server, desktop state, screenshots, and local desktop dependencies.
-- `telegram_ai_bridge.py` still depends on `desktop engine/desktop_agent.py` for direct desktop requests and on `desktop engine/desktop_host_app.py` for desktop-host autostart.
+- `C:\Users\barru\Documents\New project\desktop engine\` contains the desktop automation engine: agent, host app, broker, MCP server, desktop state, screenshots, and local desktop dependencies.
+- `telegram_ai_bridge.py` still depends on that sibling desktop engine for direct desktop requests and desktop-host autostart.
 
 ## Documentation map
 
@@ -63,7 +63,7 @@ If you prefer to keep this isolated, you can use a virtual environment first:
 cd "C:\Users\barru\Documents\New project\telegram-ai-bridge"
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-cd ".\desktop engine"
+cd "..\desktop engine"
 py -m pip install -r requirements.txt
 ```
 
@@ -84,14 +84,14 @@ py .\telegram_ai_bridge.py
 If you want apps and windows to appear on your actual desktop, start the interactive desktop host app in your logged-in Windows session:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_host_app.py
 ```
 
 You can still use the console broker if needed:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_broker.py
 ```
 
@@ -126,7 +126,7 @@ DESKTOP_AGENT_FOCUS_RETRY_DELAY_MS=25
 For one-off CLI tests, you can choose the mode directly:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_agent_cli.py --mode fast --broker-url "http://127.0.0.1:8765" "open notepad then type hello"
 ```
 
@@ -165,14 +165,14 @@ You can also chain several steps in one natural request:
 The same agent can also be used outside Telegram:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_agent_cli.py "open rewrite_mtt_manual.py in notepad"
 ```
 
 Or through the visible-session broker:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_agent_cli.py --broker-url "http://127.0.0.1:8765" "open rewrite_mtt_manual.py in notepad"
 ```
 
@@ -185,14 +185,14 @@ The desktop agent now keeps a simple persistent task session per channel or CLI 
 There is also an MCP server that exposes the desktop agent and broker tools over stdio:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_mcp_server.py
 ```
 
 This MCP server is the preferred integration point for GitHub Copilot, Copilot CLI, and other MCP-capable clients. The visible desktop host should still be running if you want real desktop actions:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_host_app.py
 ```
 
@@ -228,7 +228,7 @@ Use the specific `desktop_*` tools whenever possible. Use `desktop_request` for 
 GitHub documents MCP as the standard way to extend Copilot with local or remote tools, and Copilot CLI supports both local and remote MCP servers. For the smoothest setup, use this server as a local STDIO MCP server:
 
 ```powershell
-cd "C:\Users\barru\Documents\New project\telegram-ai-bridge\desktop engine"
+cd "C:\Users\barru\Documents\New project\desktop engine"
 py .\desktop_mcp_server.py
 ```
 
