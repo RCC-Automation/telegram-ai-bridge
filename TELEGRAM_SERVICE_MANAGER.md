@@ -60,6 +60,22 @@ Ensure running:
 py -3 .\telegram_service_manager.py ensure --json
 ```
 
+Ensure now does three things:
+
+- tries the scheduled task path when Windows allows it
+- installs a user-level logon startup entry for the watchdog
+- starts the watchdog immediately
+
+The watchdog is:
+
+```text
+telegram_service_watchdog.py
+```
+
+It checks `http://127.0.0.1:8787/health` every 30 seconds and starts the
+notifier if the local endpoint is down. It does not poll Telegram directly and
+does not start Codex directly.
+
 ## Current Working Backend
 
 The manager first tries to use a Windows Scheduled Task named:
@@ -74,7 +90,9 @@ On this machine, Windows currently denies task creation from Codex:
 ERROR: Access is denied.
 ```
 
-The manager therefore falls back to a direct detached process backend. This backend worked when launched with host-level execution permission and passed health checks on:
+The manager therefore falls back to a direct detached process backend plus a
+user-level watchdog. This backend worked when launched with host-level execution
+permission and passed health checks on:
 
 ```text
 http://127.0.0.1:8787/health
@@ -95,6 +113,13 @@ and reads the service heartbeat from:
 
 ```text
 C:\Users\barru\Documents\New project\telegram-messages\bridge-heartbeats\telegram_notifier.json
+```
+
+The watchdog writes:
+
+```text
+telegram_watchdog_pid.txt
+C:\Users\barru\Documents\New project\telegram-messages\bridge-heartbeats\telegram_watchdog.json
 ```
 
 ## Interactive Telegram Mode

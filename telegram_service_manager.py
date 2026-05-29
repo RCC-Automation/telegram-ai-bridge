@@ -23,17 +23,23 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 WORKSPACE_ROOT = ROOT.parent
 HEARTBEAT_PATH = WORKSPACE_ROOT / "telegram-messages" / "bridge-heartbeats" / "telegram_notifier.json"
+WATCHDOG_HEARTBEAT_PATH = WORKSPACE_ROOT / "telegram-messages" / "bridge-heartbeats" / "telegram_watchdog.json"
 INBOX_PATH = ROOT / "telegram_notifier_inbox.json"
 GATEWAY_LOCK_PATH = ROOT / "telegram_codex_gateway.lock"
 TRANSCRIPT_PATH = WORKSPACE_ROOT / "telegram-messages" / "telegram-codex-transcript.jsonl"
 TASK_NAME = os.getenv("TELEGRAM_NOTIFIER_TASK_NAME", "CodexTelegramNotifier")
 RUN_KEY_NAME = os.getenv("TELEGRAM_NOTIFIER_RUN_KEY_NAME", "CodexTelegramNotifier")
 RUN_SCRIPT = ROOT / "run_telegram_notifier.ps1"
+RUN_WATCHDOG_SCRIPT = ROOT / "run_telegram_watchdog.ps1"
 BOOTSTRAP_SCRIPT = ROOT / "telegram_service_bootstrap.py"
 NOTIFIER_SCRIPT = ROOT / "telegram_notifier_service.py"
+WATCHDOG_SCRIPT = ROOT / "telegram_service_watchdog.py"
 STDOUT_LOG = ROOT / "telegram_notifier_service.out.log"
 STDERR_LOG = ROOT / "telegram_notifier_service.err.log"
 PID_FILE = ROOT / "telegram_notifier_restart_pid.txt"
+WATCHDOG_STDOUT_LOG = ROOT / "telegram_watchdog.out.log"
+WATCHDOG_STDERR_LOG = ROOT / "telegram_watchdog.err.log"
+WATCHDOG_PID_FILE = ROOT / "telegram_watchdog_pid.txt"
 NOTIFIER_URL = os.getenv("TELEGRAM_NOTIFIER_URL", "http://127.0.0.1:8787")
 TOKEN_PATH = ROOT / "telegram_notifier_token.txt"
 
@@ -59,7 +65,15 @@ def read_json(path: Path) -> Any:
 
 
 def heartbeat_status() -> dict[str, Any] | None:
-    heartbeat = read_json(HEARTBEAT_PATH)
+    return heartbeat_file_status(HEARTBEAT_PATH)
+
+
+def watchdog_heartbeat_status() -> dict[str, Any] | None:
+    return heartbeat_file_status(WATCHDOG_HEARTBEAT_PATH)
+
+
+def heartbeat_file_status(path: Path) -> dict[str, Any] | None:
+    heartbeat = read_json(path)
     if not isinstance(heartbeat, dict):
         return None
     annotated = dict(heartbeat)
@@ -195,6 +209,43 @@ def direct_start() -> dict[str, Any]:
     return {"ok": True, "pid": process.pid, "backend": "direct-detached", "pid_file": str(PID_FILE)}
 
 
+def direct_start_watchdog() -> dict[str, Any]:
+    if not BOOTSTRAP_SCRIPT.exists() or not WATCHDOG_SCRIPT.exists():
+        return {
+            "ok": False,
+            "error": "Missing watchdog bootstrap or service script.",
+            "bootstrap": str(BOOTSTRAP_SCRIPT),
+            "service": str(WATCHDOG_SCRIPT),
+        }
+    current = watchdog_heartbeat_status()
+    if current and not current.get("stale"):
+        return {"ok": True, "already_running": True, "heartbeat": current}
+    env = os.environ.copy()
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+    process = subprocess.Popen(
+        [
+            pythonw_path(),
+            str(BOOTSTRAP_SCRIPT),
+            str(WATCHDOG_SCRIPT),
+            "--stdout",
+            str(WATCHDOG_STDOUT_LOG),
+            "--stderr",
+            str(WATCHDOG_STDERR_LOG),
+        ],
+        cwd=str(ROOT),
+        env=env,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=creationflags,
+        close_fds=True,
+    )
+    WATCHDOG_PID_FILE.write_text(str(process.pid), encoding="utf-8")
+    return {"ok": True, "pid": process.pid, "backend": "direct-detached", "pid_file": str(WATCHDOG_PID_FILE)}
+
+
 def task_run() -> dict[str, Any]:
     query = task_query()
     if not query["exists"]:
@@ -255,6 +306,15 @@ def status() -> dict[str, Any]:
         "health": health(timeout=3),
         "tcp": tcp_status(),
         "heartbeat": heartbeat_status(),
+        "watchdog": {
+            "heartbeat": watchdog_heartbeat_status(),
+            "pid_file": {
+                "path": str(WATCHDOG_PID_FILE),
+                "exists": WATCHDOG_PID_FILE.exists(),
+                "value": WATCHDOG_PID_FILE.read_text(encoding="utf-8").strip() if WATCHDOG_PID_FILE.exists() else None,
+            },
+            "run_key": run_key_status(),
+        },
         "inbox": inbox_status(),
         "gateway_lock": gateway_lock_status(),
         "transcript": transcript_status(),
@@ -447,16 +507,32 @@ def restart() -> dict[str, Any]:
 
 
 def ensure() -> dict[str, Any]:
-    installed = install_task()
+    installed_task = install_task()
+    installed_run_key = install_run_key()
+    watchdog = start_watchdog()
     current = health(timeout=3)
     if current.get("ok"):
-        return {"ok": True, "installed": installed, "already_running": True, "health": current, "status": status()}
+        return {
+            "ok": True,
+            "installed_task": installed_task,
+            "installed_run_key": installed_run_key,
+            "watchdog": watchdog,
+            "already_running": True,
+            "health": current,
+            "status": status(),
+        }
     started = start()
-    return {"ok": bool(started.get("ok")), "installed": installed, "started": started}
+    return {
+        "ok": bool(started.get("ok")),
+        "installed_task": installed_task,
+        "installed_run_key": installed_run_key,
+        "watchdog": watchdog,
+        "started": started,
+    }
 
 
 def install_run_key() -> dict[str, Any]:
-    command = f'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{RUN_SCRIPT}"'
+    command = f'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{RUN_WATCHDOG_SCRIPT}"'
     result = run_command(
         [
             "reg",
@@ -475,6 +551,14 @@ def install_run_key() -> dict[str, Any]:
     return {"ok": result["ok"], "run_key": RUN_KEY_NAME, "command": command, "result": result}
 
 
+def run_key_status() -> dict[str, Any]:
+    result = run_command(
+        ["reg", "query", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", RUN_KEY_NAME],
+        timeout=20,
+    )
+    return {"ok": result["ok"], "run_key": RUN_KEY_NAME, "result": result}
+
+
 def uninstall_run_key() -> dict[str, Any]:
     result = run_command(
         ["reg", "delete", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", RUN_KEY_NAME, "/f"],
@@ -488,6 +572,15 @@ def uninstall_task() -> dict[str, Any]:
     return {"ok": result["ok"], "task_name": TASK_NAME, "result": result}
 
 
+def start_watchdog() -> dict[str, Any]:
+    return direct_start_watchdog()
+
+
+def stop_watchdog() -> dict[str, Any]:
+    stopped = stop_pid_tree(WATCHDOG_PID_FILE)
+    return {"ok": True, "stopped": stopped, "status": {"watchdog": watchdog_heartbeat_status()}}
+
+
 COMMANDS = {
     "diagnostics": diagnostics,
     "status": status,
@@ -496,7 +589,9 @@ COMMANDS = {
     "uninstall-run-key": uninstall_run_key,
     "uninstall-task": uninstall_task,
     "start": start,
+    "start-watchdog": start_watchdog,
     "stop": stop,
+    "stop-watchdog": stop_watchdog,
     "restart": restart,
     "ensure": ensure,
 }
